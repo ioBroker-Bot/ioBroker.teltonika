@@ -1,4 +1,3 @@
-// @ts-expect-error no types
 import snmp from 'net-snmp';
 import { decodeVarbind, type SnmpValue } from './client';
 import { FAMILY_OIDS } from './oids.generated';

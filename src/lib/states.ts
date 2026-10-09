@@ -169,16 +169,26 @@ export default class DeviceStates {
         await this.adapter.setStateAsync(`${deviceId}.alive`, alive, true);
     }
 
-    /** Create the object for an arbitrary datapoint and write its value. */
-    async applyDefined(id: string, definition: StateDefinition, raw: string): Promise<ioBroker.StateValue> {
+    /**
+     * Create the object for an arbitrary datapoint and write an already typed value.
+     *
+     * The sibling of `applyDefined` for sources that are not a device string: presence is computed from a clock
+     * and a MAC list rather than read off a wire, so there is nothing to convert.
+     */
+    async writeValue(id: string, common: ioBroker.StateCommon, value: ioBroker.StateValue): Promise<void> {
         await this.addObject(id, {
             _id: `${this.adapter.namespace}.${id}`,
             type: 'state',
-            common: definition.common,
+            common,
             native: {},
         });
-        const value: ioBroker.StateValue = definition.convert ? definition.convert(raw) : raw;
         await this.adapter.setStateAsync(id, value, true);
+    }
+
+    /** Create the object for an arbitrary datapoint and write its value. */
+    async applyDefined(id: string, definition: StateDefinition, raw: string): Promise<ioBroker.StateValue> {
+        const value: ioBroker.StateValue = definition.convert ? definition.convert(raw) : raw;
+        await this.writeValue(id, definition.common, value);
         return value;
     }
 

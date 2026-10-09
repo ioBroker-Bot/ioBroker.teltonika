@@ -4,6 +4,7 @@ import { BRANCH_STATES, TABLE_ALIASES, TABLE_STATES } from './aliases';
 import TrapReceiver, { DEFAULT_TRAP_PORT, type TrapSource } from './traps';
 import type DeviceStates from '../states';
 import { sanitizeId } from '../states';
+import type PresenceTracker from '../presence';
 
 /** Common to every Teltonika family, which is what makes a degraded mode possible for unknown devices */
 const DEVICE_GROUP = {
@@ -25,11 +26,67 @@ const IF_ADMIN_STATUS = '1.3.6.1.2.1.2.2.1.7';
 const IF_UP = 1;
 const IF_DOWN = 2;
 
+/** Table of the associated Wi-Fi stations, which is read by hand rather than through the generic table path */
+const WIFI_CLIENT_TABLE = 'wIfaceClientTable';
+
+const WIFI_CLIENT_COUNT: ioBroker.StateCommon = {
+    name: 'Connected clients',
+    type: 'number',
+    role: 'value',
+    read: true,
+    write: false,
+};
+
+const WIFI_CLIENT_LIST: ioBroker.StateCommon = {
+    name: 'Client list',
+    desc: 'MAC address and SSID of every associated station, as JSON',
+    type: 'string',
+    role: 'json',
+    read: true,
+    write: false,
+};
+
 export interface SnmpDeviceConfig extends SnmpTarget {
     enabled?: boolean;
     pollInterval?: number;
     /** Set to allow writes. Empty means the adapter only reads, and the port states stay read-only. */
     writeCommunity?: string;
+}
+
+/** What a poller needs beyond the device itself, kept apart because both of these are instance wide */
+export interface SnmpPollerExtras {
+    /** Fed with every associated station, so the configured devices can be marked present */
+    presence?: PresenceTracker | null;
+    /**
+     * Write the full list of associated MAC addresses into the object tree. Off unless the user asks: presence
+     * needs the list, but it does not need everyone who ever joined the network to end up in the tree.
+     */
+    exposeClients?: boolean;
+}
+
+export interface WifiClient {
+    /** As the device reports it, which is `A1:B2:C3:D4:E5:F6` on these routers */
+    mac: string;
+    ssid: string | null;
+}
+
+/**
+ * Pair each associated station with the network it joined.
+ *
+ * Sorted, so the JSON state changes when the set of clients changes rather than because the device happened to
+ * walk its table in a different order.
+ */
+export function clientsWithSsid(
+    macs: Map<string, string>,
+    ifaceIndices: Map<string, string>,
+    ssids: Map<string, string>,
+): WifiClient[] {
+    const clients: WifiClient[] = [];
+    for (const [index, mac] of macs) {
+        const iface = ifaceIndices.get(index);
+        clients.push({ mac, ssid: (iface && ssids.get(iface)) || null });
+    }
+    return clients.sort((a, b) => (a.ssid || '').localeCompare(b.ssid || '') || a.mac.localeCompare(b.mac));
 }
 
 /**
@@ -38,6 +95,18 @@ export interface SnmpDeviceConfig extends SnmpTarget {
  */
 export function indexOf(oid: string, columnOid: string): string | null {
     return oid.startsWith(`${columnOid}.`) ? oid.slice(columnOid.length + 1) : null;
+}
+
+/** Walk one column of a table, keyed by the row index its OIDs carry. Empty values are left out. */
+export async function walkColumn(client: SnmpClient, columnOid: string): Promise<Map<string, string>> {
+    const values = new Map<string, string>();
+    for (const [oid, value] of await client.subtree(columnOid)) {
+        const index = indexOf(oid, columnOid);
+        if (index && value) {
+            values.set(index, value);
+        }
+    }
+    return values;
 }
 
 /**
@@ -113,17 +182,22 @@ export class SnmpPoller {
     onReachabilityChange: (() => void) | null = null;
 
     private readonly branches: ReadonlySet<string>;
+    private readonly presence: PresenceTracker | null;
+    private readonly exposeClients: boolean;
 
     constructor(
         adapter: ioBroker.Adapter,
         states: DeviceStates,
         config: SnmpDeviceConfig,
         branches: ReadonlySet<string> = new Set(),
+        extras: SnmpPollerExtras = {},
     ) {
         this.adapter = adapter;
         this.states = states;
         this.config = config;
         this.branches = branches;
+        this.presence = extras.presence || null;
+        this.exposeClients = !!extras.exposeClients;
         this.client = new SnmpClient(config);
     }
 
@@ -232,6 +306,13 @@ export class SnmpPoller {
                 `SNMP ${this.config.host}: no OID table for family "${family}" (${fwVersion}); ` +
                     `only common device values are read. Add its MIB and run "npm run generate-oids".`,
             );
+        } else if (this.branches.has('clients') && !this.oids.tables[WIFI_CLIENT_TABLE]) {
+            // Worth saying out loud: presence stays silent forever on such a device, and nothing else would
+            // tell the user why. Teltonika added the wireless group to the MIB only in recent firmware.
+            this.adapter.log.warn(
+                `SNMP ${this.config.host}: the MIB of family "${family}" defines no ${WIFI_CLIENT_TABLE}, ` +
+                    `so no Wi-Fi clients and no presence can be read from this device.`,
+            );
         }
 
         const id = await this.readDeviceId();
@@ -279,6 +360,10 @@ export class SnmpPoller {
             for (const [name, table] of Object.entries(this.oids.tables)) {
                 // A branch the user did not ask for is not even requested from the device
                 if (table.branch && !this.branches.has(table.branch)) {
+                    continue;
+                }
+                if (name === WIFI_CLIENT_TABLE) {
+                    await this.pollWifiClients(deviceId, table);
                     continue;
                 }
                 await this.pollTable(deviceId, name, table);
@@ -461,6 +546,38 @@ export class SnmpPoller {
         return true;
     }
 
+    /**
+     * The stations associated to the access points of the device.
+     *
+     * Three walks: the MAC column names the stations, the interface column says which wireless interface each
+     * joined, and `wIfaceTable` turns that into an SSID. The last one is read even while the wireless branch is
+     * off, because a MAC address without the network it joined is of little use.
+     *
+     * An empty table is a result, not a failure — nobody is connected — so this writes a count of zero and
+     * reports an empty list rather than returning early the way the generic table path does.
+     */
+    private async pollWifiClients(deviceId: string, table: FamilyTable): Promise<void> {
+        const macs = await walkColumn(this.client, table.rowName);
+        const ifaceColumn = table.columns.ssidIndex;
+        const ifaceIndices = ifaceColumn ? await walkColumn(this.client, ifaceColumn) : new Map<string, string>();
+        const wIface = this.oids?.tables.wIfaceTable;
+        const ssids = wIface ? await walkColumn(this.client, wIface.rowName) : new Map<string, string>();
+
+        const clients = clientsWithSsid(macs, ifaceIndices, ssids);
+
+        if (this.exposeClients) {
+            await this.states.ensureChannel(`${deviceId}.${table.channel}`, 'Wi-Fi clients');
+            await this.states.writeValue(`${deviceId}.${table.channel}.count`, WIFI_CLIENT_COUNT, clients.length);
+            await this.states.writeValue(
+                `${deviceId}.${table.channel}.list`,
+                WIFI_CLIENT_LIST,
+                JSON.stringify(clients),
+            );
+        }
+
+        await this.presence?.report(deviceId, clients);
+    }
+
     private async pollTable(deviceId: string, name: string, table: FamilyTable): Promise<void> {
         const definitions = TABLE_STATES[name];
         const alias = TABLE_ALIASES[name];
@@ -468,13 +585,7 @@ export class SnmpPoller {
             return;
         }
 
-        const rawNames = new Map<string, string>();
-        for (const [oid, value] of await this.client.subtree(table.rowName)) {
-            const index = indexOf(oid, table.rowName);
-            if (index && value) {
-                rawNames.set(index, value);
-            }
-        }
+        const rawNames = await walkColumn(this.client, table.rowName);
         if (!rawNames.size) {
             return;
         }
@@ -542,6 +653,7 @@ export default class SnmpManager {
         private readonly adapter: ioBroker.Adapter,
         private readonly states: DeviceStates,
         branches: string[] = [],
+        private readonly extras: SnmpPollerExtras = {},
     ) {
         this.branches = new Set(branches);
     }
@@ -551,7 +663,7 @@ export default class SnmpManager {
             if (device.enabled === false || !device.host) {
                 continue;
             }
-            const poller = new SnmpPoller(this.adapter, this.states, device, this.branches);
+            const poller = new SnmpPoller(this.adapter, this.states, device, this.branches, this.extras);
             poller.onReachabilityChange = () => void this.publishConnections();
             this.pollers.push(poller);
             poller.start().catch(error => this.adapter.log.error(`SNMP ${device.host}: ${error}`));

@@ -330,6 +330,16 @@
                     "md": 4,
                     "lg": 3
                 },
+                "snmpWifiClients": {
+                    "type": "checkbox",
+                    "label": "Wi-Fi client list",
+                    "help": "MAC address of every associated station",
+                    "default": false,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 4,
+                    "lg": 3
+                },
                 "_headerTraps": {
                     "newLine": true,
                     "type": "header",
@@ -384,6 +394,107 @@
                     "text": "Community strings and SNMPv3 keys in this table are stored encrypted with the system secret. Anyone with access to the ioBroker host can still read them, so grant no more rights than the adapter needs.",
                     "xs": 12,
                     "sm": 12
+                }
+            }
+        },
+        "presenceTab": {
+            "type": "panel",
+            "label": "Presence",
+            "items": {
+                "_presenceHint": {
+                    "type": "staticText",
+                    "text": "Every device listed here gets its own branch under presence, named after the row, set while one of the routers reports its MAC address as associated to Wi-Fi. Read over SNMP only: the MQTT publisher of a router cannot report its clients.",
+                    "xs": 12,
+                    "sm": 12
+                },
+                "_presenceMacHint": {
+                    "newLine": true,
+                    "type": "staticText",
+                    "text": "Enter the MAC address the router shows under Status → Wireless, not the one printed on the phone: phones use a separate random address per network. It changes again when the network is forgotten and rejoined.",
+                    "xs": 12,
+                    "sm": 12
+                },
+                "presenceGrace": {
+                    "newLine": true,
+                    "type": "number",
+                    "label": "Grace period",
+                    "help": "in seconds, before a device counts as away",
+                    "min": 10,
+                    "max": 86400,
+                    "default": 180,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 4,
+                    "lg": 2
+                },
+                "_graceHint": {
+                    "type": "staticText",
+                    "text": "A phone leaves the association list while it sleeps and reappears seconds later, so a sighting counts for this long. Below about a minute the states will flicker.",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 8,
+                    "lg": 10
+                },
+                "_readStations": {
+                    "newLine": true,
+                    "type": "sendTo",
+                    "command": "teltonika:getWifiClients",
+                    "label": "Read connected devices",
+                    "variant": "contained",
+                    "showProcess": true,
+                    "useNative": true,
+                    "timeout": 60000,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 4,
+                    "lg": 3
+                },
+                "_readStationsHint": {
+                    "type": "staticText",
+                    "text": "Appends every station the configured SNMP devices currently have associated, as inactive rows named after the address. The log lists them with their SSID and says which addresses are random ones, which is how a phone is told from a printer.",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 8,
+                    "lg": 9
+                },
+                "presenceDevices": {
+                    "newLine": true,
+                    "type": "table",
+                    "xs": 12,
+                    "sm": 12,
+                    "items": [
+                        {
+                            "type": "checkbox",
+                            "attr": "enabled",
+                            "title": "Active",
+                            "width": "70px",
+                            "default": true
+                        },
+                        {
+                            "type": "text",
+                            "attr": "name",
+                            "title": "Name",
+                            "width": "200px",
+                            "sort": true,
+                            "filter": true,
+                            "default": ""
+                        },
+                        {
+                            "type": "text",
+                            "attr": "mac",
+                            "title": "MAC address",
+                            "width": "220px",
+                            "default": ""
+                        },
+                        {
+                            "type": "number",
+                            "attr": "grace",
+                            "title": "Grace period",
+                            "width": "140px",
+                            "min": 10,
+                            "max": 86400
+                        }
+                    ]
                 }
             }
         }

@@ -1,7 +1,7 @@
 'use strict';
 
 const { expect } = require('chai');
-const { indexOf, uniqueRowNames, matchInterfaces } = require('../build/lib/snmp/poller.js');
+const { indexOf, uniqueRowNames, matchInterfaces, clientsWithSsid } = require('../build/lib/snmp/poller.js');
 const { TABLE_STATES, BRANCH_STATES } = require('../build/lib/snmp/aliases.js');
 const { FAMILY_OIDS } = require('../build/lib/snmp/oids.generated.js');
 
@@ -193,9 +193,12 @@ describe('optional branches', () => {
         expect(tables.ioTable.branch).to.equal(undefined);
     });
 
-    it('never exposes the per-client MAC table', () => {
-        // wIfaceClientTable is one row per connected device and would keep a rolling list of hardware addresses
-        expect(FAMILY_OIDS.RUTC.tables).to.not.have.property('wIfaceClientTable');
+    it('keeps the per-client MAC table out of the generic table path', () => {
+        // Resolved like every other table, but only read while the `clients` branch is on
+        expect(FAMILY_OIDS.RUTC.tables.wIfaceClientTable.branch).to.equal('clients');
+        expect(FAMILY_OIDS.RUTC.tables.wIfaceClientTable.rowName).to.equal('1.3.6.1.4.1.48690.7.5.1.3');
+        // No TABLE_STATES entry, so a channel per MAC address cannot appear by accident
+        expect(TABLE_STATES).to.not.have.property('wIfaceClientTable');
     });
 
     it('resolves the GPS scalars of a family that has them', () => {
@@ -221,5 +224,69 @@ describe('optional branches', () => {
         expect(TABLE_STATES.wIfaceTable.hidden.convert('0')).to.equal(false);
         expect(TABLE_STATES.hsSessionTable.authorized.convert('1')).to.equal(true);
         expect(TABLE_STATES.radioTable.up.convert('N/A')).to.equal(null);
+    });
+});
+
+describe('clientsWithSsid', () => {
+    it('names the network each station joined', () => {
+        const macs = new Map([
+            ['1', 'A1:B2:C3:D4:E5:F6'],
+            ['2', '00:11:22:33:44:55'],
+        ]);
+        // wIfaceClientInterfaceIndex points into wIfaceTable, whose naming column holds the SSID
+        const ifaces = new Map([
+            ['1', '1'],
+            ['2', '2'],
+        ]);
+        const ssids = new Map([
+            ['1', 'Home'],
+            ['2', 'Guest'],
+        ]);
+
+        expect(clientsWithSsid(macs, ifaces, ssids)).to.deep.equal([
+            { mac: '00:11:22:33:44:55', ssid: 'Guest' },
+            { mac: 'A1:B2:C3:D4:E5:F6', ssid: 'Home' },
+        ]);
+    });
+
+    it('keeps a station whose interface cannot be resolved', () => {
+        // The wireless branch may be off, or the device may report an index the interface table does not have
+        const macs = new Map([['7', 'A1:B2:C3:D4:E5:F6']]);
+
+        expect(clientsWithSsid(macs, new Map(), new Map())).to.deep.equal([
+            { mac: 'A1:B2:C3:D4:E5:F6', ssid: null },
+        ]);
+    });
+
+    it('sorts, so the JSON state follows the clients and not the walk order', () => {
+        const ssids = new Map([['1', 'Home']]);
+        const first = clientsWithSsid(
+            new Map([
+                ['1', 'bb:bb:bb:bb:bb:bb'],
+                ['2', 'aa:aa:aa:aa:aa:aa'],
+            ]),
+            new Map([
+                ['1', '1'],
+                ['2', '1'],
+            ]),
+            ssids,
+        );
+        const second = clientsWithSsid(
+            new Map([
+                ['5', 'aa:aa:aa:aa:aa:aa'],
+                ['6', 'bb:bb:bb:bb:bb:bb'],
+            ]),
+            new Map([
+                ['5', '1'],
+                ['6', '1'],
+            ]),
+            ssids,
+        );
+
+        expect(JSON.stringify(first)).to.equal(JSON.stringify(second));
+    });
+
+    it('reports an empty table as nobody connected', () => {
+        expect(clientsWithSsid(new Map(), new Map(), new Map())).to.deep.equal([]);
     });
 });

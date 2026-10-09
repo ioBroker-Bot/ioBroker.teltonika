@@ -11,8 +11,9 @@ import type { SnmpDeviceEntry } from '../../types';
  */
 
 const SERIAL = '1.3.6.1.4.1.48690.1.1.0';
-const PRODUCT_CODE = '1.3.6.1.4.1.48690.1.3.0';
-const FW_VERSION = '1.3.6.1.4.1.48690.1.6.0';
+/** Exported because the station read in `stations.ts` identifies a device the very same way */
+export const PRODUCT_CODE = '1.3.6.1.4.1.48690.1.3.0';
+export const FW_VERSION = '1.3.6.1.4.1.48690.1.6.0';
 
 /** A /22 already means a thousand probes; anything larger is a mistake rather than an intention. */
 const MAX_HOSTS = 1024;

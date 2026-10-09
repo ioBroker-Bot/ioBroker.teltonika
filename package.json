@@ -48,7 +48,7 @@
     "prepublishOnly": "npm run build",
     "test:integration": "mocha test/adapter.test.js --exit",
     "test:package": "mocha test/package.test.js --exit",
-    "test:unit": "mocha test/mib.test.js test/states.test.js test/client.test.js test/poller.test.js test/scan.test.js test/traps.test.js --exit",
+    "test:unit": "mocha test/mib.test.js test/states.test.js test/client.test.js test/poller.test.js test/presence.test.js test/scan.test.js test/stations.test.js test/traps.test.js --exit",
     "test": "npm run test:unit && npm run test:integration",
     "lint": "eslint -c eslint.config.mjs",
     "build": "tsc -p tsconfig.build.json && node tasks",

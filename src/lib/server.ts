@@ -6,6 +6,14 @@ import type DeviceStates from './states';
 import type { TeltonikaAdapterConfig } from '../types';
 const FORBIDDEN_CHARS = /[\][*,;'"`<>\\?]/g;
 
+/**
+ * How long a stored QoS 2 message waits for its release.
+ *
+ * The release follows the receipt within milliseconds, so anything still here after a minute belongs to a
+ * router that was unplugged in the middle of the handshake and will never finish it.
+ */
+const QOS2_ABANDONED_AFTER = 60000;
+
 interface MQTTPacket {
     qos: 0 | 1 | 2;
     topic: string;
@@ -16,10 +24,9 @@ interface MQTTPacket {
 
 type StateState = 'requested' | 'received' | 'ignored';
 
+/** An inbound QoS 2 message that is stored until its release arrives, with the time it was taken in */
 interface MQTTPacketQos2 extends MQTTPacket {
-    ts?: number;
-    cmd?: string;
-    count?: number;
+    ts: number;
 }
 
 interface MQTTClient {
@@ -27,7 +34,11 @@ interface MQTTClient {
     _will: string;
     id: string;
     iobId: string;
-    _messages: (MQTTPacketQos2 | MQTTPacket)[];
+    /**
+     * Inbound QoS 2 messages waiting for their release. Nothing else is stored, because every publish of the
+     * broker itself goes out with QoS 0.
+     */
+    _messages: MQTTPacketQos2[];
     on: (event: string, handler: (arg?: any) => void) => void;
     connack: (options: { returnCode: number; sessionPresent?: boolean }) => void;
     destroy: () => void;
@@ -74,8 +85,6 @@ export default class MQTTServer {
 
     async start(): Promise<void> {
         this.config.timeout = !this.config.timeout ? 300 : parseInt(this.config.timeout as string, 10);
-        this.config.retransmitInterval = parseInt(this.config.retransmitInterval as string, 10) || 2000;
-        this.config.retransmitCount = parseInt(this.config.retransmitCount as string, 10) || 10;
         this.config.defaultQoS = parseInt(this.config.defaultQoS as string, 10) || 0;
         this.config.pollInterval = parseInt(this.config.pollInterval as string, 10) || 5000;
         this.config.port = parseInt(this.config.port as string, 10) || 1883;
@@ -178,17 +187,17 @@ export default class MQTTServer {
                 } else if (packet.qos === 2) {
                     const pack = client._messages?.find(e => e.messageId === packet.messageId);
                     if (pack) {
-                        // duplicate message => ignore
-                        this.adapter.log.warn(
-                            `Client [${client.id}] ignored duplicate message with ID: ${packet.messageId}`,
+                        // A repeat of a message that is still waiting for its pubrel. The payload must not be
+                        // handled twice — that is what QoS 2 is for — but the id has to be acknowledged again:
+                        // a router that gets no pubrec repeats the publish for as long as it lives.
+                        this.adapter.log.debug(
+                            `Client [${client.id}] repeated message ID ${packet.messageId}, answered with pubrec`,
                         );
+                        client.pubrec({ messageId: packet.messageId });
                         return;
                     }
-                    const packetQos2: MQTTPacketQos2 = packet;
-                    packetQos2.ts = Date.now();
-                    packetQos2.cmd = 'pubrel';
-                    packetQos2.count = 0;
-                    client._messages.push(packetQos2);
+                    this.dropAbandonedMessages(client);
+                    client._messages.push({ ...packet, ts: Date.now() });
 
                     client.pubrec({ messageId: packet.messageId });
                     return;
@@ -279,9 +288,15 @@ export default class MQTTServer {
                     await this.receivedTopic(client._messages[pos], client);
                     client._messages?.splice(pos, 1);
                 } else {
-                    this.adapter.log.warn(
-                        `Client [${client.id}] received pubrel on ${client.id} for unknown messageId ${packet.messageId}`,
+                    // Nothing stored under that id: either the pubcomp of the first attempt was lost, or the
+                    // router reconnected and replayed what its session still held. A pubrel is answered with a
+                    // pubcomp either way — staying silent is what makes a router repeat it forever, and that
+                    // is what floods the log. There is nothing to deliver here: the payload was handled on the
+                    // first pubrel, or it never arrived at all.
+                    this.adapter.log.debug(
+                        `Client [${client.id}] sent pubrel for the unknown messageId ${packet.messageId}, answered with pubcomp`,
                     );
+                    client.pubcomp({ messageId: packet.messageId });
                 }
             });
 
@@ -380,6 +395,28 @@ export default class MQTTServer {
         );
     }
 
+    /**
+     * Forget QoS 2 messages whose release never came, so the list cannot grow for the life of a connection.
+     *
+     * Pruned when the next such message arrives rather than on a timer of its own: that is the only moment the
+     * list can grow, which bounds it by the publish rate of the client, and it saves a timer that would have to
+     * be cleared on unload. A dropped message is one the router gave up on as well — it was never written to a
+     * state, because that happens on the release.
+     */
+    private dropAbandonedMessages(client: MQTTClient): void {
+        if (!client._messages?.length) {
+            return;
+        }
+        const deadline = Date.now() - QOS2_ABANDONED_AFTER;
+        const kept = client._messages.filter(message => message.ts > deadline);
+        if (kept.length !== client._messages.length) {
+            this.adapter.log.debug(
+                `Client [${client.id}] dropped ${client._messages.length - kept.length} QoS 2 message(s) that were never released`,
+            );
+            client._messages = kept;
+        }
+    }
+
     readId(client: MQTTClient): Promise<void> {
         return new Promise<void>(resolve =>
             client.publish(
@@ -462,7 +499,7 @@ export default class MQTTServer {
         }
     }
 
-    private async receivedTopic(packet: MQTTPacketQos2, client: MQTTClient): Promise<void> {
+    private async receivedTopic(packet: MQTTPacket, client: MQTTClient): Promise<void> {
         if (!packet) {
             return this.adapter.log.warn(`Empty packet received: ${JSON.stringify(packet)}`);
         }

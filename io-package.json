@@ -206,8 +206,6 @@
     "timeout": 300,
     "defaultQoS": 0,
     "pollInterval": 5000,
-    "retransmitInterval": 2000,
-    "retransmitCount": 10,
     "ignorePings": false,
     "scanRange": "192.168.1.0/24",
     "scanVersion": "v2c",
@@ -216,6 +214,9 @@
     "snmpGps": false,
     "snmpWireless": false,
     "snmpHotspot": false,
+    "snmpWifiClients": false,
+    "presenceDevices": [],
+    "presenceGrace": 180,
     "trapsEnabled": false,
     "trapPort": 162,
     "trapCommunity": "public"

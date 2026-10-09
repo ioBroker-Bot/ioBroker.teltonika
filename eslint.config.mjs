@@ -34,6 +34,7 @@ export default [
             'src-admin/**/*',
             'src-rules/**/*',
             'tasks.js',
+            'tmp/**/*',
             '**/*.mjs'
         ],
     },

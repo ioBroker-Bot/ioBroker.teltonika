@@ -113,6 +113,16 @@ export const FAMILY_OIDS: { [family: string]: FamilyOids } = {
                     up: '1.3.6.1.4.1.48690.7.2.1.3',
                 },
             },
+            wIfaceClientTable: {
+                channel: 'wifiClients',
+                branch: 'clients',
+                oid: '1.3.6.1.4.1.48690.7.5',
+                rowName: '1.3.6.1.4.1.48690.7.5.1.3',
+                index: 'wIfaceClientIndex',
+                columns: {
+                    ssidIndex: '1.3.6.1.4.1.48690.7.5.1.2',
+                },
+            },
             wIfaceTable: {
                 channel: 'wifi',
                 branch: 'wireless',

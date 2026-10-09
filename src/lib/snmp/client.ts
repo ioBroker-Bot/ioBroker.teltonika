@@ -1,4 +1,3 @@
-// @ts-expect-error no types
 import snmp from 'net-snmp';
 
 /**

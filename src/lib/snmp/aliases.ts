@@ -92,9 +92,21 @@ export const TABLE_ALIASES: { [table: string]: TableAlias } = {
             wIfaceHidden: 'hidden',
         },
     },
-    // Deliberately not wIfaceClientTable: it is one row per connected device, changing on every poll, and its
-    // only content is a MAC address. `wifi.<ssid>.clients` carries the useful part without keeping a rolling
-    // list of everyone's hardware addresses in the object tree.
+    /**
+     * One row per associated station, holding nothing but a MAC address and the wireless interface it belongs
+     * to. Read by `pollWifiClients` rather than by the generic table path on purpose: a channel per MAC would
+     * accumulate in the tree for every phone that ever passed by, so the rows become one JSON state plus the
+     * presence of the devices the user named. The alias exists all the same, because the generator is what
+     * resolves the OIDs out of whatever MIB a family ships.
+     */
+    wIfaceClientTable: {
+        channel: 'wifiClients',
+        branch: 'clients',
+        rowName: 'wIfaceClientMAC',
+        columns: {
+            wIfaceClientInterfaceIndex: 'ssidIndex',
+        },
+    },
     hsSessionTable: {
         channel: 'hotspot',
         branch: 'hotspot',
@@ -124,7 +136,7 @@ export const TABLE_ALIASES: { [table: string]: TableAlias } = {
  * Branches that are off unless the user asks for them. They either expose subscriber identifiers and location,
  * or churn on every poll, and neither belongs in an object tree by default.
  */
-export const OPTIONAL_BRANCHES = ['gps', 'hotspot', 'wireless'] as const;
+export const OPTIONAL_BRANCHES = ['gps', 'hotspot', 'wireless', 'clients'] as const;
 
 export type OptionalBranch = (typeof OPTIONAL_BRANCHES)[number];
 

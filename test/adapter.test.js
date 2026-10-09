@@ -201,6 +201,64 @@ describe('Teltonika server: Test mqtt server', () => {
         });
     }).timeout(1000000);
 
+    // A pubrel the broker has no record of — a lost pubcomp, or a session the router replayed after a
+    // reconnect — must still be answered. Without a pubcomp the router repeats the pubrel for as long as it
+    // lives, which floods the log and never resolves.
+    it('Teltonika Server: answers a pubrel with an unknown messageId', function (_done) {
+        const net = require('node:net');
+        const mqttConnection = require('mqtt-connection');
+        const MESSAGE_ID = 54321;
+
+        const stream = net.createConnection({ host: '127.0.0.1', port: 1885 });
+        const client = mqttConnection(stream);
+        let finished = false;
+        let timer = null;
+        const finish = error => {
+            if (finished) {
+                return;
+            }
+            finished = true;
+            if (timer) {
+                clearTimeout(timer);
+            }
+            try {
+                client.destroy();
+            } catch {
+                // the socket may already be gone
+            }
+            _done(error);
+        };
+        timer = setTimeout(() => finish(new Error('no pubcomp for a pubrel with an unknown messageId')), 5000);
+
+        stream.on('connect', () =>
+            client.connect({
+                clientId: 'PubrelProbe',
+                protocolId: 'MQTT',
+                protocolVersion: 4,
+                username: 'user',
+                password: 'pass1',
+                keepalive: 60,
+                clean: true,
+            }),
+        );
+        client.on('connack', packet => {
+            if (packet.returnCode !== 0) {
+                finish(new Error(`broker refused the probe: ${packet.returnCode}`));
+                return;
+            }
+            client.pubrel({ messageId: MESSAGE_ID });
+        });
+        client.on('pubcomp', packet =>
+            finish(
+                packet.messageId === MESSAGE_ID
+                    ? undefined
+                    : new Error(`pubcomp for ${packet.messageId} instead of ${MESSAGE_ID}`),
+            ),
+        );
+        client.on('error', error => finish(error));
+        stream.on('error', error => finish(error));
+    }).timeout(15000);
+
     after('Teltonika Server: Stop js-controller', function (_done) {
         // let FUNCTION and not => here
         this.timeout(5000);

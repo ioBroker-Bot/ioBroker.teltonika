@@ -2,12 +2,15 @@ import { Adapter, type AdapterOptions } from '@iobroker/adapter-core'; // Get co
 import Server from './lib/server';
 import DeviceStates from './lib/states';
 import SnmpManager from './lib/snmp/poller';
+import PresenceTracker, { DEFAULT_GRACE } from './lib/presence';
 import { mergeDevices, scanRange } from './lib/snmp/scan';
+import { describeStations, mergeStations, readStations } from './lib/snmp/stations';
 import type { SnmpDeviceEntry, TeltonikaAdapterConfig } from './types';
 
 export class TeltonikaAdapter extends Adapter {
     private server: Server | null = null;
     private snmp: SnmpManager | null = null;
+    private presence: PresenceTracker | null = null;
 
     public constructor(options: Partial<AdapterOptions> = {}) {
         super({
@@ -42,20 +45,44 @@ export class TeltonikaAdapter extends Adapter {
             device.privKey = this.decryptCredential(device.privKey);
             device.writeCommunity = this.decryptCredential(device.writeCommunity);
         }
+        // Presence watches the devices the user named, whichever router reports them
+        const presence = new PresenceTracker(
+            this,
+            deviceStates,
+            config.presenceDevices || [],
+            Number(config.presenceGrace) > 0 ? Number(config.presenceGrace) : DEFAULT_GRACE,
+        );
+        if (presence.size) {
+            this.presence = presence;
+            await presence.start();
+        }
+
         if (config.snmpDevices?.length) {
+            // The station list is needed for presence as well, so asking for presence switches that read on
+            // without also putting every observed MAC address into the object tree
+            const wantsClients = !!config.snmpWifiClients || !!this.presence;
             const branches = [
                 config.snmpGps ? 'gps' : null,
                 config.snmpHotspot ? 'hotspot' : null,
                 config.snmpWireless ? 'wireless' : null,
+                wantsClients ? 'clients' : null,
             ].filter((branch): branch is string => branch !== null);
             // Only the port switches are writable; everything else the adapter creates is read-only
             await this.subscribeStatesAsync('*.ports.*.enabled');
-            this.snmp = new SnmpManager(this, deviceStates, branches);
+            this.snmp = new SnmpManager(this, deviceStates, branches, {
+                presence: this.presence,
+                exposeClients: !!config.snmpWifiClients,
+            });
             this.snmp.start(config.snmpDevices, {
                 enabled: config.trapsEnabled,
                 port: config.trapPort,
                 community: this.decryptCredential(config.trapCommunity),
             });
+        } else if (this.presence) {
+            this.log.warn(
+                'Presence is configured, but no SNMP device is. The MQTT publisher of a router cannot report ' +
+                    'its Wi-Fi clients, so presence is read over SNMP only.',
+            );
         }
     }
 
@@ -90,6 +117,72 @@ export class TeltonikaAdapter extends Adapter {
         }
         if (obj.callback) {
             this.sendTo(obj.from, obj.command, list, obj.callback);
+        }
+    }
+
+    /**
+     * Answers the "read connected devices" button of the presence tab.
+     *
+     * Reads the association list of every configured SNMP device and appends the stations that are not listed
+     * yet, so the MAC addresses do not have to be typed. The reply carries both the table and a readable
+     * summary, because the MAC alone says little — which of them is a phone is told by the random address.
+     */
+    private async sendStationList(obj: ioBroker.Message): Promise<void> {
+        const config = this.config as unknown as TeltonikaAdapterConfig;
+        const devices = (config.snmpDevices || []).filter(device => device.enabled !== false && device.host);
+        if (!devices.length) {
+            if (obj.callback) {
+                this.sendTo(
+                    obj.from,
+                    obj.command,
+                    { error: 'No SNMP device is configured. Wi-Fi clients can only be read over SNMP.' },
+                    obj.callback,
+                );
+            }
+            return;
+        }
+
+        const scans = await Promise.all(
+            devices.map(device =>
+                readStations({
+                    ...device,
+                    community: this.decryptCredential(device.community),
+                    authKey: this.decryptCredential(device.authKey),
+                    privKey: this.decryptCredential(device.privKey),
+                }),
+            ),
+        );
+        const stations = scans.flatMap(scan => scan.stations);
+        const { devices: presenceDevices, added } = mergeStations(config.presenceDevices, stations);
+
+        const lines = describeStations(scans, added);
+        const failed = scans.filter(scan => scan.error);
+        if (failed.length) {
+            this.log.warn(`Wi-Fi clients: ${failed.length} of ${scans.length} device(s) could not be read`);
+        }
+        this.log.info(`Wi-Fi clients: ${stations.length} station(s), ${added.length} new`);
+        for (const line of lines) {
+            this.log.info(`  ${line}`);
+        }
+
+        // Nothing answered at all: that is an error the dialog has to show, not a quiet "0 added"
+        if (failed.length === scans.length) {
+            if (obj.callback) {
+                this.sendTo(obj.from, obj.command, { error: lines.join('\n') }, obj.callback);
+            }
+            return;
+        }
+
+        if (obj.callback) {
+            this.sendTo(
+                obj.from,
+                obj.command,
+                {
+                    native: { presenceDevices },
+                    result: `${added.length} of ${stations.length} station(s) added as inactive rows:\n${lines.join('\n')}`,
+                },
+                obj.callback,
+            );
         }
     }
 
@@ -138,6 +231,10 @@ export class TeltonikaAdapter extends Adapter {
             await this.sendDeviceList(obj);
             return;
         }
+        if (obj?.command === 'teltonika:getWifiClients') {
+            await this.sendStationList(obj);
+            return;
+        }
         if (obj?.command !== 'scan') {
             return;
         }
@@ -172,6 +269,10 @@ export class TeltonikaAdapter extends Adapter {
     }
 
     async unload(cb: () => void): Promise<void> {
+        if (this.presence) {
+            this.presence.stop();
+            this.presence = null;
+        }
         if (this.snmp) {
             await this.snmp.destroy();
             this.snmp = null;
