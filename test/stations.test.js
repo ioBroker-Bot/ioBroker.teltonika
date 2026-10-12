@@ -42,6 +42,15 @@ describe('suggestName', () => {
     it('falls back without inventing digits', () => {
         expect(suggestName('xx')).to.equal('client');
     });
+
+    it('prefers the host name the router knows', () => {
+        expect(suggestName('A1:B2:C3:D4:E5:F6', 'Duschlicht', 'Espressif Inc.')).to.equal('Duschlicht');
+    });
+
+    it('puts the manufacturer in front when there is no host name', () => {
+        expect(suggestName('A1:B2:C3:D4:E5:F6', undefined, 'Espressif Inc.')).to.equal('Espressif_d4e5f6');
+        expect(suggestName('A1:B2:C3:D4:E5:F6', undefined, 'Samsung Electronics Co.,Ltd')).to.equal('Samsung_d4e5f6');
+    });
 });
 
 describe('mergeStations', () => {
@@ -78,6 +87,33 @@ describe('mergeStations', () => {
         const { devices } = mergeStations([existing], [station('A1:B2:C3:D4:E5:F6')]);
 
         expect(devices[1].name).to.equal('client_d4e5f6_2');
+    });
+
+    it('names a new row after its host name', () => {
+        const named = { ...station('A1:B2:C3:D4:E5:F6'), hostname: 'Waschmaschine' };
+
+        expect(mergeStations([], [named]).devices[0].name).to.equal('Waschmaschine');
+    });
+
+    it('replaces a placeholder name nobody touched', () => {
+        const row = { enabled: false, name: 'client_d4e5f6', mac: 'A1:B2:C3:D4:E5:F6' };
+        const named = { ...station('A1:B2:C3:D4:E5:F6'), hostname: 'Waschmaschine' };
+
+        const { devices, added, renamed } = mergeStations([row], [named]);
+
+        expect(added).to.have.length(0);
+        expect(renamed).to.equal(1);
+        expect(devices).to.deep.equal([{ enabled: false, name: 'Waschmaschine', mac: 'A1:B2:C3:D4:E5:F6' }]);
+    });
+
+    it('keeps a placeholder name once the row is active, it already has states', () => {
+        const row = { enabled: true, name: 'client_d4e5f6', mac: 'A1:B2:C3:D4:E5:F6' };
+        const named = { ...station('A1:B2:C3:D4:E5:F6'), hostname: 'Waschmaschine' };
+
+        const { devices, renamed } = mergeStations([row], [named]);
+
+        expect(renamed).to.equal(0);
+        expect(devices).to.deep.equal([row]);
     });
 
     it('skips an address it could not read', () => {

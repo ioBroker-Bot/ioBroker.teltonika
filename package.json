@@ -39,6 +39,7 @@
   "files": [
     "build/",
     "admin/",
+    "data/",
     "img/",
     "widgets/",
     "io-package.json",
@@ -60,6 +61,7 @@
     "update-packages": "npx -y npm-check-updates --upgrade && cd src-devices && npx -y npm-check-updates --upgrade && cd ../src-widgets && npx -y npm-check-updates --upgrade",
     "npm": "npm i && cd src-devices && npm i && cd ../src-widgets && npm i",
     "build:ts": "tsc -p tsconfig.build.json",
+    "update-oui": "node tools/update-oui.js",
     "build:devices": "node tasks --devices",
     "build:widgets": "node tasks --widgets"
   },

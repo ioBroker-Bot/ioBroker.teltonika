@@ -154,14 +154,14 @@ export class TeltonikaAdapter extends Adapter {
             ),
         );
         const stations = scans.flatMap(scan => scan.stations);
-        const { devices: presenceDevices, added } = mergeStations(config.presenceDevices, stations);
+        const { devices: presenceDevices, added, renamed } = mergeStations(config.presenceDevices, stations);
 
         const lines = describeStations(scans, added);
         const failed = scans.filter(scan => scan.error);
         if (failed.length) {
             this.log.warn(`Wi-Fi clients: ${failed.length} of ${scans.length} device(s) could not be read`);
         }
-        this.log.info(`Wi-Fi clients: ${stations.length} station(s), ${added.length} new`);
+        this.log.info(`Wi-Fi clients: ${stations.length} station(s), ${added.length} new, ${renamed} renamed`);
         for (const line of lines) {
             this.log.info(`  ${line}`);
         }
@@ -188,7 +188,9 @@ export class TeltonikaAdapter extends Adapter {
                 obj.command,
                 {
                     native: { presenceDevices },
-                    result: `${added.length} of ${stations.length} station(s) added as inactive rows:\n${lines.join('\n')}`,
+                    result: `${added.length} of ${stations.length} station(s) added as inactive rows${
+                        renamed ? `, ${renamed} placeholder name(s) replaced` : ''
+                    }:\n${lines.join('\n')}`,
                 },
                 obj.callback,
             );

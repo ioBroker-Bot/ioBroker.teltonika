@@ -13,6 +13,7 @@ npm run test:package       # validates package.json / io-package.json consistenc
 
 npx mocha test/adapter.test.js --exit --grep "reconnection"   # single test case
 npx translate-adapter                                          # regenerate admin/i18n from English
+npm run update-oui                                             # refresh data/oui.txt (MAC manufacturers) from the IEEE
 npm run release-patch                                          # @alcalzone/release-script (also minor/major)
 ```
 
