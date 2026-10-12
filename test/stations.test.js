@@ -101,12 +101,14 @@ describe('describeStations', () => {
     it('reports per device why it contributed nothing', () => {
         const scans = [
             { host: '192.168.1.1', device: '', stations: [], error: 'no Teltonika device answered' },
-            { host: '192.168.1.2', device: 'TSW202', stations: [] },
+            { host: '192.168.1.2', device: 'RUTC50', stations: [] },
+            { host: '192.168.1.3', device: 'TSW202', stations: [], noWifi: true },
         ];
 
         expect(describeStations(scans, [])).to.deep.equal([
             '192.168.1.1: no Teltonika device answered',
-            'TSW202 192.168.1.2: no station associated',
+            'RUTC50 192.168.1.2: no station associated',
+            'TSW202 192.168.1.3: no Wi-Fi, skipped',
         ]);
     });
 });

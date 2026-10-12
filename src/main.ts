@@ -172,6 +172,14 @@ export class TeltonikaAdapter extends Adapter {
             }
             return;
         }
+        // Every device that answered is a switch: a quiet "0 added" would not say why
+        if (scans.every(scan => scan.error || scan.noWifi)) {
+            lines.unshift('None of the configured SNMP devices has Wi-Fi.');
+            if (obj.callback) {
+                this.sendTo(obj.from, obj.command, { error: lines.join('\n') }, obj.callback);
+            }
+            return;
+        }
 
         if (obj.callback) {
             this.sendTo(

@@ -34,6 +34,8 @@ export interface StationScan {
     stations: Station[];
     /** Why this device contributed nothing, kept so the admin page can say so per device */
     error?: string;
+    /** A device without a radio, such as a TSW switch. Not a failure: there is simply nothing to read. */
+    noWifi?: boolean;
 }
 
 /**
@@ -76,13 +78,13 @@ export async function readStations(target: SnmpTarget): Promise<StationScan> {
 
         const family = fwVersion.split('_R_')[0];
         const oids = FAMILY_OIDS[family];
-        const table = oids?.tables.wIfaceClientTable;
+        if (!oids) {
+            throw new Error(`no OID table for family "${family}", add its MIB and run "npm run generate-oids"`);
+        }
+        const table = oids.tables.wIfaceClientTable;
+        // A MIB without the client table belongs to a device without Wi-Fi
         if (!table) {
-            throw new Error(
-                oids
-                    ? `the MIB of family "${family}" defines no wIfaceClientTable`
-                    : `no OID table for family "${family}", add its MIB and run "npm run generate-oids"`,
-            );
+            return { host: target.host, device, stations: [], noWifi: true };
         }
 
         const macs = await walkColumn(client, table.rowName);
@@ -167,6 +169,10 @@ export function describeStations(scans: StationScan[], added: Station[]): string
         const device = scan.device ? `${scan.device} ${scan.host}` : scan.host;
         if (scan.error) {
             lines.push(`${device}: ${scan.error}`);
+            continue;
+        }
+        if (scan.noWifi) {
+            lines.push(`${device}: no Wi-Fi, skipped`);
             continue;
         }
         if (!scan.stations.length) {
