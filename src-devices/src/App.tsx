@@ -8,6 +8,7 @@ import { Connection, type ThemeType } from '@iobroker/gui-components';
 import type { IStateContext, StateChangeListener, ObjectChangeListener } from '@iobroker/dm-widgets';
 import TeltonikaDevicesComponent from './TeltonikaDevicesComponent';
 import TeltonikaPortsComponent from './TeltonikaPortsComponent';
+import TeltonikaPersonComponent from './TeltonikaPersonComponent';
 
 const IOB_HOST = 'localhost';
 const IOB_PORT = 8081;
@@ -148,6 +149,28 @@ class DevPorts extends TeltonikaPortsComponent {
     }
 }
 
+/** All four sizes of the person tile next to each other, the history dialog opens on a click */
+class DevPerson extends TeltonikaPersonComponent {
+    override render(): React.JSX.Element {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    gap: 24,
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    flexWrap: 'wrap',
+                }}
+            >
+                <div style={{ width: 160, containerType: 'inline-size' }}>{this.renderCompact()}</div>
+                <div style={{ width: 332, containerType: 'inline-size' }}>{this.renderWide()}</div>
+                <div style={{ width: 332, height: 160, containerType: 'inline-size' }}>{this.renderWideTall()}</div>
+                <div style={{ width: 332, containerType: 'inline-size' }}>{this.renderHuge()}</div>
+            </div>
+        );
+    }
+}
+
 type ConnState = 'connecting' | 'ready' | { error: string };
 
 const baseWidget = {
@@ -172,9 +195,10 @@ const baseSettings = {
 export default function App(): React.JSX.Element {
     const [ctx, setCtx] = useState<DevStateContext | null>(null);
     const [conn, setConn] = useState<ConnState>('connecting');
-    const [tab, setTab] = useState<'devices' | 'ports'>('devices');
+    const [tab, setTab] = useState<'devices' | 'ports' | 'person'>('devices');
     const [device, setDevice] = useState('');
     const [allowSwitching, setAllowSwitching] = useState(false);
+    const [person, setPerson] = useState('');
 
     useEffect(() => {
         let socket: Connection | null = null;
@@ -251,6 +275,27 @@ export default function App(): React.JSX.Element {
                 >
                     Port panel
                 </button>
+                <button
+                    type="button"
+                    style={tabStyle(tab === 'person')}
+                    onClick={() => setTab('person')}
+                >
+                    Person
+                </button>
+                {tab === 'person' ? (
+                    <input
+                        value={person}
+                        onChange={e => setPerson(e.target.value)}
+                        placeholder="name of a person of the tab Presence"
+                        style={{
+                            padding: 6,
+                            minWidth: 320,
+                            background: '#0b0f14',
+                            color: '#d8dde0',
+                            border: '1px solid #3a3f43',
+                        }}
+                    />
+                ) : null}
                 {tab === 'ports' ? (
                     <>
                         <input
@@ -288,14 +333,20 @@ export default function App(): React.JSX.Element {
                         settings={{ ...baseSettings, instance: DEFAULT_INSTANCE, onlyAlive: false } as any}
                         onHide={() => {}}
                     />
+                ) : tab === 'person' ? (
+                    <DevPerson
+                        key="person"
+                        widget={baseWidget as any}
+                        stateContext={ctx}
+                        settings={{ ...baseSettings, name: '', instance: DEFAULT_INSTANCE, person } as any}
+                        onHide={() => {}}
+                    />
                 ) : (
                     <DevPorts
                         key={`ports-${device}-${allowSwitching}`}
                         widget={baseWidget as any}
                         stateContext={ctx}
-                        settings={
-                            { ...baseSettings, instance: DEFAULT_INSTANCE, device, allowSwitching } as any
-                        }
+                        settings={{ ...baseSettings, instance: DEFAULT_INSTANCE, device, allowSwitching } as any}
                         onHide={() => {}}
                     />
                 )}

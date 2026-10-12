@@ -383,3 +383,20 @@ export function applyState(device: DeviceInfo, relativeId: string, value: ioBrok
 
     return false;
 }
+
+/** Instance the widgets talk to when the settings have none */
+export const DEFAULT_INSTANCE = 'teltonika.0';
+
+/**
+ * `teltonika.0` from what the instance field stores: `system.adapter.teltonika.0`, a bare number or the id itself.
+ * Anything unusable falls back to `teltonika.0`.
+ */
+export function normalizeInstance(instance: string | undefined | null): string {
+    const text = String(instance ?? '')
+        .trim()
+        .replace(/^system\.adapter\./, '');
+    if (/^\d+$/.test(text)) {
+        return `teltonika.${text}`;
+    }
+    return /^[-\w]+\.\d+$/.test(text) ? text : DEFAULT_INSTANCE;
+}

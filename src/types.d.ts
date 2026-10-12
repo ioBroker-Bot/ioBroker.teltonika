@@ -36,10 +36,13 @@ export interface SnmpDeviceEntry {
     writeCommunity?: string;
 }
 
-/** A device whose presence is derived from the MAC addresses the routers report as associated */
+/** A person whose presence is derived from the MAC addresses the routers report as associated */
 export interface PresenceDeviceEntry {
     enabled?: boolean;
     name: string;
+    /** Optional group, summarised below `presence.groups.<group>` */
+    group?: string;
+    /** One or more MAC addresses, separated by comma or semicolon */
     mac: string;
     /** Seconds without a sighting before the device counts as away. Empty uses `presenceGrace`. */
     grace?: number | string;
@@ -59,8 +62,14 @@ export interface TeltonikaAdapterConfig {
     snmpWireless?: boolean;
     /** Write the MAC address of every associated Wi-Fi station into the tree. Presence works without it. */
     snmpWifiClients?: boolean;
-    /** Devices to watch, each becoming `presence.<name>` */
+    /** Persons to watch, each becoming `presence.persons.<name>` */
     presenceDevices?: PresenceDeviceEntry[];
+    /** Number of comings and goings kept in `history` of a person */
+    presenceHistory?: number | string;
+    /** SSIDs of the guest networks, separated by comma: their stations are counted in `presence.guests` */
+    presenceGuestSsids?: string;
+    /** Count the stations nobody watches in `presence.unknown` */
+    presenceUnknown?: boolean;
     /** Seconds without a sighting before a device counts as away, unless its row overrides it */
     presenceGrace?: number | string;
     /** Receive SNMP traps. Port 162 is privileged on Linux, so a higher port may be needed. */

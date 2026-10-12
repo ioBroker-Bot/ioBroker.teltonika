@@ -65,6 +65,16 @@ Note that the `devices` array on each topic is currently **documentation only** 
 
 `client.__secret` (timestamp + random) distinguishes sockets when a router reconnects on the same client ID before the old socket is torn down; every packet handler compares it against the registered client and ignores stale sockets. `client.iobId` is the client ID with `FORBIDDEN_CHARS` replaced — ioBroker object IDs cannot contain `[]*,;'"\`<>\\?`.
 
+### Presence (`src/lib/presence.ts`)
+
+Persons like fb-checkpresence, with the **same object tree as ioBroker.tr-064** (`presence.persons.<name>`, `presence.groups.<group>`, `presence.guests`, `presence.unknown`, summary states on `presence`) - the vis-2 and devices widgets of both adapters rely on it, so keep the two in sync. A row of `presenceDevices` is a person: `name`, `group`, `mac` (several, comma separated, `splitMacs()`), `grace`.
+
+- The SNMP poller hands every association list to `report(deviceId, clients)`; the tracker keeps the last list per device for guests (SSID in `presenceGuestSsids`) and unknown stations. Never a state per observed MAC - only counts and one JSON list.
+- A person is present while one of its MACs was seen within its grace period. The departure is the last sighting, not the end of the grace period.
+- The first determination is no event; "never seen" is only decided after the grace period, when every router had the chance to report.
+- `start()` runs even without configuration: it deletes everything below `presence` that is not wanted any more (removed persons, the flat `presence.<name>.connected` layout of the first version) and takes over `present`, times, `lastSeen`, `history` and the sums of today from the stored states. Objects are written with `extendObject()`, which keeps `common.custom` (history settings).
+- The channel of a person carries `native.person` = the configured name: the widgets store the name, not an object ID. Messages `presence` (`{ persons, groups }`) and `personList` (`[{ label, value }]` for `autocompleteSendTo`).
+
 ## Conventions
 
 - Changelog entries go in `README.md` under a `### **WORK IN PROGRESS**` heading (the placeholder comment above the Changelog section marks the spot). Do **not** hand-edit the `news` block in `io-package.json` — the release script generates it from the README and bumps versions in both files.

@@ -2,7 +2,7 @@ import SnmpClient, { isTimeout, type SnmpTarget } from './client';
 import { FAMILY_OIDS } from './oids.generated';
 import { clientsWithSsid, walkColumn } from './poller';
 import { FW_VERSION, PRODUCT_CODE } from './scan';
-import { normalizeMac } from '../presence';
+import { normalizeMac, splitMacs } from '../presence';
 import type { PresenceDeviceEntry } from '../../types';
 
 /**
@@ -132,7 +132,8 @@ export function mergeStations(
     found: Station[],
 ): { devices: PresenceDeviceEntry[]; added: Station[] } {
     const current = existing || [];
-    const known = new Set(current.map(entry => normalizeMac(entry.mac)).filter(Boolean));
+    // a row may hold several addresses of one person
+    const known = new Set(current.flatMap(entry => splitMacs(entry.mac).macs));
     const names = new Set(current.map(entry => (entry.name || '').trim()).filter(Boolean));
 
     const added: Station[] = [];

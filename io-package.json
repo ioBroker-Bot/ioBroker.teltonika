@@ -165,6 +165,24 @@
             "zh-cn": "单台设备的前面板：每个端口的链路、速率与流量"
           },
           "icon": "ports.svg"
+        },
+        {
+          "name": "TeltonikaPersonComponent",
+          "label": "Teltonika person",
+          "description": {
+            "en": "A person of the presence detection: at home or away, since when, last arrival and departure, history on click",
+            "de": "Eine Person der Anwesenheitserkennung: zu Hause oder abwesend, seit wann, letztes Kommen und Gehen, Verlauf per Klick",
+            "ru": "Человек из определения присутствия: дома или нет, с какого времени, последний приход и уход, история по щелчку",
+            "pt": "Uma pessoa da deteção de presença: em casa ou ausente, desde quando, última chegada e saída, histórico com um clique",
+            "nl": "Een persoon van de aanwezigheidsdetectie: thuis of weg, sinds wanneer, laatste aankomst en vertrek, geschiedenis met een klik",
+            "fr": "Une personne de la détection de présence : à la maison ou absente, depuis quand, dernière arrivée et départ, historique par un clic",
+            "it": "Una persona del rilevamento di presenza: a casa o fuori, da quando, ultimo arrivo e uscita, cronologia con un clic",
+            "es": "Una persona de la detección de presencia: en casa o fuera, desde cuándo, última llegada y salida, historial con un clic",
+            "pl": "Osoba z wykrywania obecności: w domu lub poza nim, od kiedy, ostatnie przyjście i wyjście, historia po kliknięciu",
+            "uk": "Особа з визначення присутності: вдома чи ні, з якого часу, останній прихід і відхід, історія за клацанням",
+            "zh-cn": "在家检测中的人员：在家或外出、持续时间、最近到达与离开，点击查看历史"
+          },
+          "icon": "person.svg"
         }
       ]
     },
@@ -178,7 +196,9 @@
         "label": "telt_set_label",
         "components": [
           "TeltonikaDevices",
-          "TeltonikaPorts"
+          "TeltonikaPorts",
+          "TeltonikaPerson",
+          "TeltonikaPresence"
         ]
       }
     },
@@ -217,6 +237,9 @@
     "snmpWifiClients": false,
     "presenceDevices": [],
     "presenceGrace": 180,
+    "presenceHistory": 50,
+    "presenceGuestSsids": "",
+    "presenceUnknown": false,
     "trapsEnabled": false,
     "trapPort": 162,
     "trapCommunity": "public"

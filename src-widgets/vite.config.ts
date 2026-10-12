@@ -25,6 +25,8 @@ const config = {
             exposes: {
                 './TeltonikaDevices': './src/TeltonikaDevices.tsx',
                 './TeltonikaPorts': './src/TeltonikaPorts.tsx',
+                './TeltonikaPerson': './src/TeltonikaPerson.tsx',
+                './TeltonikaPresence': './src/TeltonikaPresence.tsx',
                 './translations': './src/translations',
             },
             remotes: {},

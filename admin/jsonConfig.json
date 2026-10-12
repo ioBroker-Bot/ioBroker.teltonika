@@ -403,7 +403,7 @@
             "items": {
                 "_presenceHint": {
                     "type": "staticText",
-                    "text": "Every device listed here gets its own branch under presence, named after the row, set while one of the routers reports its MAC address as associated to Wi-Fi. Read over SNMP only: the MQTT publisher of a router cannot report its clients.",
+                    "text": "Every row is a person with one or more MAC addresses, separated by commas, and an optional group. The person gets its own branch under presence.persons with present, last arrival and departure, since when, the sums of the day and the last comings and goings; it is present while one of the routers reports one of its addresses as associated to Wi-Fi. Persons of one group are summarised under presence.groups. Read over SNMP only: the MQTT publisher of a router cannot report its clients.",
                     "xs": 12,
                     "sm": 12
                 },
@@ -457,6 +457,39 @@
                     "md": 8,
                     "lg": 9
                 },
+                "presenceHistory": {
+                    "newLine": true,
+                    "type": "number",
+                    "label": "Kept comings and goings",
+                    "help": "per person, in the state history",
+                    "min": 1,
+                    "max": 1000,
+                    "default": 50,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 4,
+                    "lg": 2
+                },
+                "presenceGuestSsids": {
+                    "type": "text",
+                    "label": "Guest SSIDs",
+                    "help": "separated by commas, their stations are counted under presence.guests",
+                    "default": "",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 4,
+                    "lg": 4
+                },
+                "presenceUnknown": {
+                    "type": "checkbox",
+                    "label": "Count unknown stations",
+                    "help": "stations nobody watches, as a number and a list under presence.unknown",
+                    "default": false,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 4,
+                    "lg": 4
+                },
                 "presenceDevices": {
                     "newLine": true,
                     "type": "table",
@@ -481,9 +514,18 @@
                         },
                         {
                             "type": "text",
+                            "attr": "group",
+                            "title": "Group",
+                            "width": "160px",
+                            "sort": true,
+                            "filter": true,
+                            "default": ""
+                        },
+                        {
+                            "type": "text",
                             "attr": "mac",
-                            "title": "MAC address",
-                            "width": "220px",
+                            "title": "MAC addresses",
+                            "width": "320px",
                             "default": ""
                         },
                         {

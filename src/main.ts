@@ -45,16 +45,17 @@ export class TeltonikaAdapter extends Adapter {
             device.privKey = this.decryptCredential(device.privKey);
             device.writeCommunity = this.decryptCredential(device.writeCommunity);
         }
-        // Presence watches the devices the user named, whichever router reports them
-        const presence = new PresenceTracker(
-            this,
-            deviceStates,
-            config.presenceDevices || [],
-            Number(config.presenceGrace) > 0 ? Number(config.presenceGrace) : DEFAULT_GRACE,
-        );
-        if (presence.size) {
+        // Presence watches the persons the user named, whichever router reports their devices
+        const presence = new PresenceTracker(this, config.presenceDevices || [], {
+            grace: Number(config.presenceGrace) > 0 ? Number(config.presenceGrace) : DEFAULT_GRACE,
+            historyLength: Number(config.presenceHistory) || undefined,
+            guestSsids: (config.presenceGuestSsids || '').split(/[,;]/),
+            unknown: !!config.presenceUnknown,
+        });
+        // also without anything configured: start() deletes what a former configuration left behind
+        await presence.start();
+        if (presence.enabled) {
             this.presence = presence;
-            await presence.start();
         }
 
         if (config.snmpDevices?.length) {
@@ -235,6 +236,22 @@ export class TeltonikaAdapter extends Adapter {
      * which admin then merges into the form the user is looking at.
      */
     private async onMessage(obj: ioBroker.Message): Promise<void> {
+        if (obj?.command === 'presence' || obj?.command === 'personList') {
+            // The persons for the widgets. `personList` feeds the `autocompleteSendTo` of the device tile,
+            // which only takes an array
+            const info = this.presence?.info() ?? { persons: [], groups: [] };
+            const answer =
+                obj.command === 'presence'
+                    ? info
+                    : info.persons
+                          .map(person => person.name)
+                          .sort((a, b) => a.localeCompare(b))
+                          .map(name => ({ label: name, value: name }));
+            if (obj.callback) {
+                this.sendTo(obj.from, obj.command, answer, obj.callback);
+            }
+            return;
+        }
         if (obj?.command === 'teltonika:getDevices') {
             await this.sendDeviceList(obj);
             return;
