@@ -29,6 +29,7 @@
     "@iobroker/testing": "^6.3.0",
     "@iobroker/types": "^7.2.5",
     "@tsconfig/node22": "^22.0.6",
+    "@types/net-snmp": "^3.23.0",
     "@types/node": "^22.20.5",
     "mqtt": "^5.16.0",
     "typescript": "~6.0.3"

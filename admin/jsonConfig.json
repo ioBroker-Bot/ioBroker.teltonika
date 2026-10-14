@@ -11,7 +11,10 @@
                     "text": "Connection settings",
                     "size": 3,
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "bind": {
                     "newLine": true,
@@ -21,7 +24,8 @@
                     "xs": 12,
                     "sm": 10,
                     "md": 8,
-                    "lg": 3
+                    "lg": 3,
+                    "xl": 3
                 },
                 "port": {
                     "label": "Port",
@@ -31,7 +35,8 @@
                     "xs": 12,
                     "sm": 2,
                     "md": 2,
-                    "lg": 1
+                    "lg": 1,
+                    "xl": 1
                 },
                 "timeout": {
                     "label": "Client timeout",
@@ -42,7 +47,8 @@
                     "xs": 12,
                     "sm": 10,
                     "md": 2,
-                    "lg": 1
+                    "lg": 1,
+                    "xl": 1
                 },
                 "_header2": {
                     "newLine": true,
@@ -50,7 +56,10 @@
                     "text": "Authentication settings",
                     "size": 3,
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "user": {
                     "newLine": true,
@@ -59,13 +68,15 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 2
+                    "lg": 2,
+                    "xl": 2
                 },
                 "password": {
                     "xs": 12,
                     "sm": 12,
                     "md": 8,
                     "lg": 4,
+                    "xl": 4,
                     "type": "password",
                     "label": "Password",
                     "repeat": true
@@ -76,14 +87,20 @@
                     "text": "Other settings",
                     "size": 3,
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "ignorePings": {
                     "newLine": true,
                     "type": "checkbox",
                     "label": "Ignore warnings with pingreq",
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "pollInterval": {
                     "newLine": true,
@@ -95,7 +112,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 2
+                    "lg": 2,
+                    "xl": 2
                 }
             }
         },
@@ -108,14 +126,20 @@
                     "text": "Network scan",
                     "size": 3,
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "_scanHint": {
                     "newLine": true,
                     "type": "staticText",
                     "text": "Devices without an MQTT publisher, such as the TSW switches, can only be read over SNMP. Enable the SNMP agent on the device first.",
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "scanRange": {
                     "newLine": true,
@@ -126,7 +150,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 5,
-                    "lg": 3
+                    "lg": 3,
+                    "xl": 3
                 },
                 "scanVersion": {
                     "type": "select",
@@ -140,7 +165,8 @@
                     "xs": 12,
                     "sm": 4,
                     "md": 2,
-                    "lg": 1
+                    "lg": 1,
+                    "xl": 1
                 },
                 "scanCommunity": {
                     "type": "text",
@@ -149,7 +175,8 @@
                     "xs": 12,
                     "sm": 8,
                     "md": 3,
-                    "lg": 2
+                    "lg": 2,
+                    "xl": 2
                 },
                 "_scan": {
                     "type": "sendTo",
@@ -163,7 +190,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 2,
-                    "lg": 2
+                    "lg": 2,
+                    "xl": 2
                 },
                 "_headerDevices": {
                     "newLine": true,
@@ -171,13 +199,19 @@
                     "text": "SNMP devices",
                     "size": 3,
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "snmpDevices": {
                     "newLine": true,
                     "type": "table",
                     "xs": 12,
                     "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12,
                     "items": [
                         {
                             "type": "checkbox",
@@ -293,14 +327,20 @@
                     "text": "Optional data",
                     "size": 3,
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "_branchHint": {
                     "newLine": true,
                     "type": "staticText",
                     "text": "These are off by default: they expose the device location and identifiable clients, and the wireless tables change with every poll.",
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "snmpGps": {
                     "newLine": true,
@@ -310,7 +350,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 3
+                    "lg": 3,
+                    "xl": 3
                 },
                 "snmpWireless": {
                     "type": "checkbox",
@@ -319,7 +360,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 3
+                    "lg": 3,
+                    "xl": 3
                 },
                 "snmpHotspot": {
                     "type": "checkbox",
@@ -328,7 +370,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 3
+                    "lg": 3,
+                    "xl": 3
                 },
                 "snmpWifiClients": {
                     "type": "checkbox",
@@ -338,7 +381,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 3
+                    "lg": 3,
+                    "xl": 3
                 },
                 "_headerTraps": {
                     "newLine": true,
@@ -346,14 +390,20 @@
                     "text": "Traps",
                     "size": 3,
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "_trapHint": {
                     "newLine": true,
                     "type": "staticText",
                     "text": "Configure the device to send traps to this host under Services → SNMP → Trap Settings. Most Teltonika traps carry no values, so a trap is recorded and triggers an immediate poll of that device.",
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "trapsEnabled": {
                     "newLine": true,
@@ -363,7 +413,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 3
+                    "lg": 3,
+                    "xl": 3
                 },
                 "trapPort": {
                     "type": "number",
@@ -376,7 +427,8 @@
                     "xs": 12,
                     "sm": 4,
                     "md": 2,
-                    "lg": 1
+                    "lg": 1,
+                    "xl": 1
                 },
                 "trapCommunity": {
                     "type": "text",
@@ -386,14 +438,18 @@
                     "xs": 12,
                     "sm": 8,
                     "md": 3,
-                    "lg": 2
+                    "lg": 2,
+                    "xl": 2
                 },
                 "_credentialHint": {
                     "newLine": true,
                     "type": "staticText",
                     "text": "Community strings and SNMPv3 keys in this table are stored encrypted with the system secret. Anyone with access to the ioBroker host can still read them, so grant no more rights than the adapter needs.",
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 }
             }
         },
@@ -405,14 +461,20 @@
                     "type": "staticText",
                     "text": "Every row is a person with one or more MAC addresses, separated by commas, and an optional group. The person gets its own branch under presence.persons with present, last arrival and departure, since when, the sums of the day and the last comings and goings; it is present while one of the routers reports one of its addresses as associated to Wi-Fi. Persons of one group are summarised under presence.groups. Read over SNMP only: the MQTT publisher of a router cannot report its clients.",
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "_presenceMacHint": {
                     "newLine": true,
                     "type": "staticText",
                     "text": "Enter the MAC address the router shows under Status → Wireless, not the one printed on the phone: phones use a separate random address per network. It changes again when the network is forgotten and rejoined.",
                     "xs": 12,
-                    "sm": 12
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
                 },
                 "presenceGrace": {
                     "newLine": true,
@@ -425,7 +487,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 2
+                    "lg": 4,
+                    "xl": 4
                 },
                 "_graceHint": {
                     "type": "staticText",
@@ -433,7 +496,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 8,
-                    "lg": 10
+                    "lg": 8,
+                    "xl": 8
                 },
                 "_readStations": {
                     "newLine": true,
@@ -447,7 +511,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 3
+                    "lg": 4,
+                    "xl": 4
                 },
                 "_readStationsHint": {
                     "type": "staticText",
@@ -455,7 +520,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 8,
-                    "lg": 9
+                    "lg": 8,
+                    "xl": 8
                 },
                 "presenceHistory": {
                     "newLine": true,
@@ -468,7 +534,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 2
+                    "lg": 2,
+                    "xl": 2
                 },
                 "presenceGuestSsids": {
                     "type": "text",
@@ -478,7 +545,8 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 4
+                    "lg": 4,
+                    "xl": 4
                 },
                 "presenceUnknown": {
                     "type": "checkbox",
@@ -488,13 +556,17 @@
                     "xs": 12,
                     "sm": 12,
                     "md": 4,
-                    "lg": 4
+                    "lg": 4,
+                    "xl": 4
                 },
                 "presenceDevices": {
                     "newLine": true,
                     "type": "table",
                     "xs": 12,
                     "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12,
                     "items": [
                         {
                             "type": "checkbox",

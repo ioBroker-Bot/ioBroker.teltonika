@@ -176,13 +176,14 @@ device, which is where the actual values come from. A TSW202 defines no traps at
 	### **WORK IN PROGRESS**
 -->
 ## Changelog
-### 1.1.0 (2026-10-12)
+### **WORK IN PROGRESS**
 * (@GermanBluefox) Added presence detection like fb-checkpresence: a person with the MAC addresses of its devices and an optional group becomes `presence.persons.<name>` with present, last arrival and departure, since when, the sums of the day and the last comings and goings; groups, guests (by SSID) and unknown stations are summarised
 * (@GermanBluefox) Added the widgets "Person" (one person, chosen by name, with free icons, pictures, texts and colours, last arrival and departure and the comings and goings) and "Presence" (list of the persons) for vis-2, and "Teltonika person" for ioBroker.devices
 * (@GermanBluefox) Added the optional Wi-Fi client list, with the MAC address and SSID of every associated station as JSON
 * (@GermanBluefox) Added a button that fills the presence table from the devices currently connected to the routers, named after the host name the router knows or the manufacturer of the MAC address
 * (@GermanBluefox) Fixed the log being flooded with `received pubrel ... for unknown messageId`: a QoS 2 release is now always answered, which is what stops the router from repeating it
 * (@GermanBluefox) Removed the `retransmitInterval` and `retransmitCount` settings, which were read and never used, and gave an unreleased QoS 2 message an expiry instead of keeping it for the life of the connection
+* (@GermanBluefox) Fixed the build: the type declarations of net-snmp were missing, so 1.1.0 was never published
 
 ### 1.0.1 (2026-09-23)
 * (iobroker-bot) Adapter requires node.js >= 22 now.
