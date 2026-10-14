@@ -176,7 +176,7 @@ device, which is where the actual values come from. A TSW202 defines no traps at
 	### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 1.1.2 (2026-10-14)
 * (@GermanBluefox) The occupied ports - MQTT (TCP) and, if enabled, the SNMP trap receiver (UDP) - are reported to js-controller 8 (`registerUsedResource`)
 
 ### 1.1.1 (2026-10-14)
@@ -212,9 +212,6 @@ device, which is where the actual values come from. A TSW202 defines no traps at
 
 ### 0.1.0 (2025-12-07)
 * (bluefox) Changed roles of the states
-
-### 0.0.2 (2025-12-03)
-* (bluefox) initial commit
 
 [Older changelogs can be found there](CHANGELOG_OLD.md)
 

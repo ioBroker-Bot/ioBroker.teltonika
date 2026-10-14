@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "teltonika",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "news": {
+      "1.1.2": {
+        "en": "The occupied ports - MQTT (TCP) and, if enabled, the SNMP trap receiver (UDP) - are reported to js-controller 8 (`registerUsedResource`)",
+        "de": "Die belegten Ports — MQTT (TCP) und, falls aktiviert, SNMP Trap Receiver (UDP) — werden an js-controller 8 gemeldet (`registerUsedResource`)",
+        "ru": "Занятые порты — MQTT (TCP) и, если включено, приемник ловушек SNMP (UDP) — передаются в js-контроллер 8 (`RegisterUsedResource`)",
+        "pt": "As portas ocupadas - MQTT (TCP) e, se ativadas, o SNMP trap receiver (UDP) - são reportadas ao js-controller 8 (`registerUsedResource`)",
+        "nl": "De bezette poorten - MQTT (TCP) en, indien ingeschakeld, de SNMP trap-ontvanger (UDP) - worden gerapporteerd aan js-controller 8 (`RegisterUsedResource`)",
+        "fr": "Les ports occupés, MQTT (TCP) et, s'il est activé, le récepteur SNMP (UDP) sont signalés à js-controller 8 (« RegisterUsedResource »)",
+        "it": "Le porte occupate, MQTT (TCP) e, se abilitate, SNMP trap receiver (UDP), vengono segnalate a js-controller 8",
+        "es": "Los puertos ocupados (MQTT (TCP) y, si está activado, el receptor SNMP Trap (UDP), se envían al js-controller 8 (`RegisterUsedResource`)",
+        "pl": "Zajęte porty - MQTT (TCP) i, jeśli włączone, odbiornik SNMP trap (UDP) - są zgłaszane do js-controller 8 (`RegisterUsedResource`)",
+        "uk": "Зайняті порти - MQTT (TCP) і, якщо увімкнено, приймач пастки SNMP (UDP) - повідомляються js-контролеру 8 (`RegisterUsedResource`)",
+        "zh-cn": "占用的端口 —— MQTT (TCP)，如果启用，还有 SNMP 陷阱接收器 (UDP) —— 将报告给 js-controller 8（`registerUsedResource`）"
+      },
       "1.1.1": {
         "en": "Added presence detection like fb-checkpresence: a person with the MAC addresses of its devices and an optional group becomes `presence.persons.<name>` with present, last arrival and departure, since when, the sums of the day and the last comings and goings; groups, guests (by SSID) and unknown stations are summarised\nAdded the widgets \"Person\" (one person, chosen by name, with free icons, pictures, texts and colours, last arrival and departure and the comings and goings) and \"Presence\" (list of the persons) for vis-2, and \"Teltonika person\" for ioBroker.devices\nAdded the optional Wi-Fi client list, with the MAC address and SSID of every associated station as JSON\nAdded a button that fills the presence table from the devices currently connected to the routers, named after the host name the router knows or the manufacturer of the MAC address\nFixed the log being flooded with `received pubrel ... for unknown messageId`: a QoS 2 release is now always answered, which is what stops the router from repeating it\nRemoved the `retransmitInterval` and `retransmitCount` settings, which were read and never used, and gave an unreleased QoS 2 message an expiry instead of keeping it for the life of the connection\nFixed the build: the type declarations of net-snmp were missing, so 1.1.0 was never published",
         "de": "Präsenzerkennung wie fb-checkpresence hinzugefügt: Eine Person mit den MAC-Adressen ihrer Geräte und optionaler Gruppe wird zu <name>`mit Gegenwart, letzter An- und Abreise, seit wann, Summe des Tages und der letzten An- und Abreise; Gruppen, Gäste (nach SSID) und unbekannte Sender\nWidgets „Person“ (eine Person, namentlich ausgewählt, mit kostenlosen Icons, Bildern, Texten und Farben, letzte An- und Abreise) und „Präsenz“ (Personenliste) für Vis-2 und „Teltonika-Person“ für ioBroker hinzugefügt.\nOptionale Wi-Fi-Client-Liste mit MAC-Adresse und SSID aller Stationen als JSON hinzugefügt\nEs wurde ein Button hinzugefügt, der die Präsenztabelle der mit dem Router verbundenen Geräte füllt, benannt nach dem Hostnamen oder dem Hersteller der MAC-Adresse\nDas Log mit `received pubrel... for unknown messageID` wurde behoben: Ein QoS 2-Release wird jetzt immer beantwortet, sodass der Router es nicht wiederholt\nDie gelesenen und nie verwendeten Einstellungen für `retransmitInterval` und `retransmitCount` wurden entfernt und unveröffentlichte QoS 2-Nachrichten ablaufen lassen, anstatt sie für die Dauer der Verbindung aufzubewahren\nBuild behoben: Net-SNMP-Typangaben fehlten, 1.1.0 wurde nie veröffentlicht",
