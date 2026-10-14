@@ -3,6 +3,7 @@ import { Server } from 'node:net';
 import mqtt from 'mqtt-connection';
 import { SUPPORTED_TOPICS } from './topics';
 import type DeviceStates from './states';
+import { registerUsedPort, warnIfPortUsed } from './resources';
 import type { TeltonikaAdapterConfig } from '../types';
 const FORBIDDEN_CHARS = /[\][*,;'"`<>\\?]/g;
 
@@ -74,6 +75,8 @@ export default class MQTTServer {
     private adapter: ioBroker.Adapter;
     private readonly states: DeviceStates;
     private messageId = 1;
+    /** Set on unload, which can come while the start still waits for js-controller */
+    private destroyed = false;
 
     constructor(adapter: ioBroker.Adapter, states: DeviceStates) {
         this.config = adapter.config as TeltonikaAdapterConfig;
@@ -387,12 +390,18 @@ export default class MQTTServer {
         // Update connection state
         await this.updateClients();
 
+        // Ask js-controller (>= 8) first, so a failing listen can name the instance that holds the port
+        const port = this.config.port;
+        await warnIfPortUsed(this.adapter, 'tcpPort', port, this.config.bind, 'MQTT server');
+        if (this.destroyed) {
+            return;
+        }
+
         // to start
-        this.server.listen(this.config.port, this.config.bind, () =>
-            this.adapter.log.info(
-                `Starting MQTT ${this.config.user ? 'authenticated ' : ''} server on port ${this.config.port}`,
-            ),
-        );
+        this.server.listen(port, this.config.bind, () => {
+            this.adapter.log.info(`Starting MQTT ${this.config.user ? 'authenticated ' : ''} server on port ${port}`);
+            void registerUsedPort(this.adapter, 'tcpPort', port, this.config.bind);
+        });
     }
 
     /**
@@ -474,6 +483,7 @@ export default class MQTTServer {
     }
 
     async destroy(): Promise<void> {
+        this.destroyed = true;
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
             this.pollInterval = null;

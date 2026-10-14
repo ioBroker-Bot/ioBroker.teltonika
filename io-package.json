@@ -106,6 +106,7 @@
     "mode": "daemon",
     "compact": true,
     "messagebox": true,
+    "declareUsedResources": true,
     "enabled": true,
     "readme": "https://github.com/ioBroker/ioBroker.teltonika/blob/master/README.md",
     "loglevel": "info",

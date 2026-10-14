@@ -675,7 +675,7 @@ export default class SnmpManager {
 
         if (traps?.enabled && this.pollers.length) {
             this.traps = new TrapReceiver(this.adapter, this.states, host => this.sourceFor(host));
-            this.traps.start(traps.port || DEFAULT_TRAP_PORT, traps.community || 'public');
+            void this.traps.start(traps.port || DEFAULT_TRAP_PORT, traps.community || 'public');
         }
     }
 

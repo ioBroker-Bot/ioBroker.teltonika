@@ -176,6 +176,9 @@ device, which is where the actual values come from. A TSW202 defines no traps at
 	### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@GermanBluefox) The occupied ports - MQTT (TCP) and, if enabled, the SNMP trap receiver (UDP) - are reported to js-controller 8 (`registerUsedResource`)
+
 ### 1.1.1 (2026-10-14)
 * (@GermanBluefox) Added presence detection like fb-checkpresence: a person with the MAC addresses of its devices and an optional group becomes `presence.persons.<name>` with present, last arrival and departure, since when, the sums of the day and the last comings and goings; groups, guests (by SSID) and unknown stations are summarised
 * (@GermanBluefox) Added the widgets "Person" (one person, chosen by name, with free icons, pictures, texts and colours, last arrival and departure and the comings and goings) and "Presence" (list of the persons) for vis-2, and "Teltonika person" for ioBroker.devices

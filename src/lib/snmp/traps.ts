@@ -1,7 +1,9 @@
+import type { Socket } from 'node:dgram';
 import snmp from 'net-snmp';
 import { decodeVarbind, type SnmpValue } from './client';
 import { FAMILY_OIDS } from './oids.generated';
 import type DeviceStates from '../states';
+import { registerUsedPort, warnIfPortUsed } from '../resources';
 
 /**
  * Receiving SNMP traps.
@@ -56,6 +58,7 @@ export function payloadOf(pdu: any): { [oid: string]: SnmpValue } {
 
 export default class TrapReceiver {
     private receiver: any = null;
+    private stopped = false;
     private readonly names = new Map<string, string>();
 
     constructor(
@@ -71,8 +74,13 @@ export default class TrapReceiver {
         }
     }
 
-    start(port: number, community: string): void {
-        if (this.receiver) {
+    async start(port: number, community: string): Promise<void> {
+        if (this.receiver || this.stopped) {
+            return;
+        }
+        await warnIfPortUsed(this.adapter, 'udpPort', port, undefined, 'SNMP trap receiver');
+        // stop() may have come while js-controller was asked
+        if (this.receiver || this.stopped) {
             return;
         }
         try {
@@ -88,6 +96,11 @@ export default class TrapReceiver {
             );
             this.receiver.getAuthorizer().addCommunity(community);
             this.adapter.log.info(`Listening for SNMP traps on port ${port}`);
+            // net-snmp binds asynchronously and reports a failed bind only through the callback above, so the
+            // port is registered once its socket really listens
+            for (const socket of Object.values<Socket>(this.receiver.listener?.sockets || {})) {
+                socket.once('listening', () => void registerUsedPort(this.adapter, 'udpPort', port));
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             // Port 162 is privileged on Linux, so this is a configuration problem rather than a bug
@@ -97,6 +110,7 @@ export default class TrapReceiver {
     }
 
     stop(): void {
+        this.stopped = true;
         if (this.receiver) {
             try {
                 this.receiver.close();
